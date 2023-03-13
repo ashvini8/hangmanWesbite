@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+  <meta charset ="utf-8"/>
+  <title>Canvas Assignment - Hangman</title>
+  <link href="main.css" rel="stylesheet" type="text/css">
+
+
+</head>
+
+<body>
+
+<h1 id="theword"></h1>
+
+  <canvas id="myCanvas" tabindex="1"></canvas>
+
+
+  <script>
+
+
+    var canvas = document.getElementById('myCanvas');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    var c = canvas.getContext("2d");
+
+
+/* A the top I've laid out most of my variables. The first three arrays are a group of words from each topic that could be chosen. I then have set the variables that I will change later in the code. For example 'wrong' starts to change as the user gets a arong guess, or blanks when the underscores are pushed into this array. */
+
+    var space = ["SUN", "MOON", "GALAXY", "EARTH", "JUPITER", "NEPTUNE", "MARS", "SATURN", "VENUS", "MERCURY", "URANUS", "PLUTO"];
+    var disney = ["FANTASIA", "DUMBO", "BAMBI", "TARZAN", "FROZEN", "UP", "PINOCCHIO"];
+    var countries = ["CANADA", "AUSTRALIA", "INDIA", "MAURITIUS", "MADAGASCAR", "LUXEMBOURG"];
+
+    var wrong = 0;
+    var guess = [];
+    var allguess = [];
+    var blanks = [];
+
+/* Rules / Front Page */
+/* Here I have 'designed' / written code for the main / front page to explain the rules. I have used fillText to write out the rules, the fillRect for higlighting and giving the text a background, and drawing a 'model' of what would happen. The following before the first function disappears when the user is ready to start the game. */
+
+    c.font = "45px Serif"
+    c.fillText("Hangman the Funman!", 480, 50);
+
+    c.font = "30px Serif"
+    c.fillText("How To Play", 240, 205);
+
+    c.font = "20px Serif"
+    c.fillText("Once you start, you will see that there are blanks for each letter of the mystery word. Your goal is to fill in the blanks and find the missing word.", 150, 245);
+    c.fillText("You will use the keys on your keyboard to do so.",150,265);
+
+    c.fillText("Keep in mind that there wouldn't be much fun if you just kept guessing! You have a total of 10 lives. Each incorrect guess will cost you a life.", 150, 295);
+    c.fillText("For each letter you get wrong, a part of the man is drawn",150, 315)
+    c.fillText("Your goal is to fill in and find out the mystery word before the man is drawn.",150,335);
+
+    c.fillText("Click             and press the following for your topic:", 240, 365);
+
+    c.fillText("for the topic of", 310, 400);
+    c.fillText("for the topic of", 310, 420);
+    c.fillText("for the topic of", 310, 440);
+
+
+    c.fillStyle = "red";
+    c.fillText("HERE", 290, 365);
+
+    c.fillText("2", 290, 400);
+    c.fillText("3", 290, 420);
+    c.fillText("4", 290, 440);
+
+    c.fillText("SPACE", 435, 400);
+    c.fillText("DISNEY MOVIES", 435, 420);
+    c.fillText("COUNTRIES", 435, 440);
+
+
+    c.fillStyle = "rgba(155,245,66,0.2)";
+    c.fillRect(100,125,1210,350);
+    c.fillRect(25,700, 475, 35);
+    c.fillRect(295,525,660,35);
+    c.fillRect(795,700,525,50);
+
+
+    /*Visual of Instructions */
+    c.beginPath();
+    c.moveTo(200,530);
+    c.lineTo(200,520);
+    c.lineTo(100,520);
+    c.lineTo(100,680);
+
+    c.strokeStyle = "black";
+    c.lineWidth = 2;
+    c.stroke();
+
+    c.beginPath();
+    c.moveTo(90,680);
+    c.lineTo(150,680);
+    c.stroke();
+
+    c.font = "15px Serif";
+    c.fillStyle = "black";
+    c.fillText("__ __ __ __", 200, 680);
+    c.fillText("i) You will first start of with this. This is where you start guessing the letters", 30, 725);
+
+    c.font = "18px Serif";
+    c.fillText("These Aren't It...", 500, 600);
+    c.fillText("X  F  Y  U", 500, 620);
+    c.fillText("G __ M __", 500, 670);
+
+
+    c.font = "15px Serif";
+    c.fillText("ii) When you enter an incorrect guess you will see it listed up top. The correct guesses will fill up the blanks.",300,550);
+
+    c.beginPath();
+    c.moveTo(1200,530);
+    c.lineTo(1200,520);
+    c.lineTo(1100,520);
+    c.lineTo(1100,680);
+
+    c.strokeStyle = "black";
+    c.lineWidth = 2;
+    c.stroke();
+
+    c.beginPath();
+    c.moveTo(1090,680);
+    c.lineTo(1150,680);
+    c.stroke();
+
+    c.beginPath();
+    c.arc(1200, 545, 15, 0, Math.PI * 2, true);
+    c.stroke();
+
+    c.beginPath();
+    c.moveTo(1200,560);
+    c.lineTo(1200,620);
+    c.stroke();
+
+    c.beginPath();
+    c.moveTo(1200,580);
+    c.lineTo(1170,570);
+    c.stroke();
+
+    c.beginPath();
+    c.moveTo(1200,580);
+    c.lineTo(1230,570);
+    c.stroke();
+
+    c.beginPath();
+    c.moveTo(1200,620);
+    c.lineTo(1185,650);
+    c.stroke();
+
+    c.beginPath();
+    c.moveTo(1200,620);
+    c.lineTo(1215,650);
+    c.stroke();
+
+    c.fillText("iii) When you see that the man is fully drawn before you guess the word, you loose.",800,725);
+    c.fillText("So try to guess the word before the man is drawn. You have 10 lives.",800,740);
+
+
+
+    var word;
+/* Event Listener and Code */
+    canvas.addEventListener("keydown", start);
+
+    /* This is my first event listener that I've added. Under this function I have assigned the keys 2, 3, and 4 to a specific topic. Using math.random, I allow 'AI' to pick what the mystery word is from the topic. (The topics are in arrays above). Once they've have entered their desired topic, I change the page into the 'game'. I clear the canvas and withing the function I build the 'stand' for the man. To get the blanks of the word, I used a for loop that would push and underscore into a variable word.length times. For example of the word was "UP", the for loop would push two underscores in. Since in an array values are automatically seperated my commas, I used '.join(" ")' to have them seperated by a space. I then display this array of blanks in my canvas. Last but not least I cancel this event listener and I call my second event listener that will always lead to function that actually controls the game. */
+
+    function start(e){
+      var uchar = String.fromCharCode(e.keyCode);
+
+      if(uchar == '2' || uchar == '3' || uchar == '4'){
+
+        if(uchar == '2'){//space
+          var number = Math.floor(Math.random() * (11 - 0 + 1)) +0;
+          word = space[number];
+        }else if(uchar == '3'){//disney movies
+          var number = Math.floor(Math.random() * (6 - 0 + 1)) +0;
+          word = disney[number];
+        }else if(uchar == '4'){//countries
+          var number = Math.floor(Math.random() * (5 - 0 + 1)) +0;
+          word = countries[number];
+        }
+
+        c.clearRect(0,0,canvas.width,canvas.height);
+
+        /* the stand */
+        c.beginPath();
+        c.moveTo(300,130);
+        c.lineTo(300,100);
+        c.lineTo(50,100);
+        c.lineTo(50,600);
+        c.strokeStyle = "black";
+        c.lineWidth = 5;
+        c.stroke();
+
+        c.beginPath();
+        c.moveTo(30,600);
+        c.lineTo(150,600);
+        c.stroke();
+
+        for(var a = 0; a < word.length; a++){
+          blanks.push("___");
+        }
+
+        /* To get the Blanks*/
+        c.font = "45px Serif";
+        c.fillStyle = "black";
+        c.fillText((blanks.join("   ")), 400,600);
+
+        canvas.removeEventListener("keydown", start);
+        canvas.addEventListener("keydown", game);
+      }//end of if 2
+    }//end of start
+
+
+
+    function game(e){
+
+/* Here I convert the keycodes into strings to it is easier to work with. */
+      var uletter = String.fromCharCode(e.keyCode);
+
+/* This is statment checks if they have already entered the letter. All of the players guesses are pushed into the array 'allguess'. Using indexOf I check if the currect letter they have entered is in the array. If is, then the following message will pop up and this won't cause the player any lives. */
+      if((allguess.indexOf(uletter)) != -1){
+        c.clearRect(800, 350, 600, 100);
+        c.font = "25px Serif";
+        c.fillText("You already picked the letter '" + uletter + "'. Please try another letter", 810, 400);
+      } else {
+
+/* The continues to this part if the current key that the player has entered is a new one. This is where I enter the users guesses into the array 'allguess'. */
+
+      c.clearRect(800, 350, 600, 100);
+
+      allguess.push(uletter);
+
+/* Underneath the if statement below is what happens when the user gets a right letter. I have a for loop where I check each letter of the mystery word and see if it matches with the users guess. I did a for loop to be able to fill in multiple blanks with one letter if that were the case. For example if the mystery word was 'MOON', if the user clicks I want the second and third blank to be filled. By checking each letter, it makes sure it just doesn't fill the first one. I then replace the corresponding blank with the correct guess. */
+        if(word.indexOf(uletter) != -1){
+
+          c.clearRect(400, 500 , 1000, 200);
+
+          for(var a = 0; a < word.length; a++){
+
+            if(word[a] == uletter){
+              blanks[a] = uletter;
+
+            }//end if to get multiple with one letter
+          }//end for
+
+          c.font = "45px Serif";
+          c.fillText((blanks.join("   ")),400,600);
+
+        }//end of if they guess right
+
+/* If the user were to get a wrong answer and their guess matched up with any of the letters in the mystery word, it takes then to the code under the following else. I track the number of wrong guesses they had. If they have gotten less than 10 wrong, it still mean they have lives left, so I display it under that if statement. I then send the value of their wrong guesses to the function 'hangman'. I then push the wrong guess into the array 'guess', The difference between 'allguess' and 'guess' is that 'allguess' records all the guesse the player makes (excluding repeats), and 'guess' gets only the wrong ones. */
+
+        else{
+          wrong += 1;
+
+          c.clearRect(0, 610, 500, 200);
+
+          if(wrong < 10){
+            c.font = "25px Serif";
+            c.fillStyle = "red";
+            c.fillText("You have "+ (10 - wrong) + " lives left", 50, 700);
+
+              c.fillStyle = "rgba(235, 64, 52, 0.3)";
+              c.strokeStyle = "#750101";
+              c.strokeWidth = 2;
+              c.beginPath()
+              c.ellipse(150, 690, 50, 120, Math.PI / 2, Math.PI * 2, 0, false); // 50 is side to side and 100 up and down
+              c.fill()
+              c.stroke();
+          }
+
+          hangman(wrong);
+          guess.push(uletter);
+
+          c.font = "30px Serif";
+          c.fillStyle = "black";
+          c.fillText("These Aren't It...", 810, 130);
+
+/* Using the array 'guess' I display it on the screen. The if statements are just because of the visual statements (5 of the guesses will go on top while the 5 are right below them) */
+
+          if(guess.length < 6){
+            c.font = "20px Serif";
+            c.fillText((guess.join("     ")), 825,200);
+          }else if(5 < guess.length){
+            c.font = "20px Serif";
+            c.fillStyle = "black";
+            c.fillText(guess.slice(5).join("     "), 825, 250);
+          }//end of if for writing used letters
+        }//end of else
+
+/* This following if statement checks to see if the player has gotten the whole word correct. If there are no blanks left, meaning all the blanks are filled in, I display the follwing message letter them know that they have won. I also them remove the event listener so that they game stops tracking each letter they still press. */
+
+        if(blanks.indexOf("___") == -1){
+          c.font = "40px Serif"
+          c.fillStyle = "#1B6901"
+          c.fillText("YOU WON! And saved Mr.Funman's Life!" , 500,400);
+          canvas.removeEventListener("keydown", game);
+        }
+
+      }//end of function game
+
+/* This function takes into account the number of wrong guesses the user has gotten, and based on that it draws a new body part. For example the first mistake draws the head, then the second draws the body, the third draws an arm, etc. At the end, when the user has used their 10 lives, along with drawing the last part of the man, I display the message of the user's loss as well. I then remove the event listener so that the game stops tracking each letter they still press. */
+      function hangman(pwrong){
+
+        c.strokeStyle = "black";
+
+        if(pwrong == 1){
+          c.beginPath();
+          c.arc(300, 180, 50, 0, Math.PI * 2, true);
+          c.stroke();
+        }// head
+
+        if(pwrong == 2){
+          c.beginPath();
+          c.moveTo(300,230);
+          c.lineTo(300,450);
+          c.stroke();
+        }//body
+
+        if(pwrong == 3){
+          c.beginPath();
+          c.moveTo(300,280);
+          c.lineTo(225,300);
+          c.stroke();
+        }//left arm
+
+        if(pwrong == 4){
+          c.beginPath();
+          c.moveTo(300,280);
+          c.lineTo(375,300);
+          c.stroke();
+        }//right arm
+
+        if(pwrong == 5){
+          c.beginPath();
+          c.moveTo(300,450);
+          c.lineTo(250,525);
+          c.stroke();
+        }//left leg
+
+        if(pwrong == 6){
+          c.beginPath();
+          c.moveTo(300,450);
+          c.lineTo(350,525);
+          c.stroke();
+        }//right leg
+
+        if(pwrong == 7){
+          c.beginPath();
+          c.moveTo(250,525);
+          c.lineTo(230,515);
+          c.stroke();
+        }//left foot
+
+        if(pwrong == 8){
+          c.beginPath();
+          c.moveTo(350,525);
+          c.lineTo(370,515);
+          c.stroke();
+        }//right foot
+
+        if(pwrong == 9){
+          c.beginPath();
+          c.moveTo(272,160);
+          c.lineTo(282,170);
+          c.stroke();
+
+          c.beginPath();
+          c.moveTo(282,160);
+          c.lineTo(272,170);
+          c.stroke();
+        }//left eye
+
+        if(pwrong == 10){
+          c.beginPath();
+          c.moveTo(318,160);
+          c.lineTo(328,170);
+          c.stroke();
+
+          c.beginPath();
+          c.moveTo(328,160);
+          c.lineTo(318,170);
+          c.stroke();
+
+          c.clearRect(400, 500, 1000, 200);
+
+          c.font = "40px Serif"
+          c.fillStyle = "#1A6AA5"
+          c.fillText("GAME OVER! The word was actually: " + word, 400,600);
+          canvas.removeEventListener("keydown", game);
+
+        }//right eye
+
+      }//end of function Hangman
+
+    }//end of else it isnt a repeated letter
+
+    /* Just in general, I use clearRects to either clear the whole canvas (like when we moved from the rules page to the game page), to clear before 'updating' (for example clearing the previous set of blanks to then display the letter that may of filled one of the banks), or to show a message (we clear the spot where the game tells the user that they have already entered the same letter, once they've entered a different letter). */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  </script>
+
+</body>
+
+</html>
